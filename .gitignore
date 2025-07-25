@@ -1,0 +1,19 @@
+# ====== Node.js ======
+node_modules
+npm-debug.log
+yarn-error.log
+dist
+
+# ====== Environment Files ======
+.env
+.env.local
+.env.development
+.env.production
+
+# ====== System Files ======
+.DS_Store
+Thumbs.db
+
+# ====== Logs ======
+logs
+*.log
