@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
-const { schema } = require("./schema");
+const User = require("./schema"); // ✅ التعديل هنا
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
@@ -34,7 +34,7 @@ app.post("/register", async (req, res) => {
   try {
     const { username, email, password, address, phone, temp } = req.body;
 
-    const existingUser = await schema.findOne({ email });
+    const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res
         .status(400)
@@ -43,7 +43,7 @@ app.post("/register", async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newUser = new schema({
+    const newUser = new User({
       username,
       email,
       password: hashedPassword,
@@ -56,9 +56,7 @@ app.post("/register", async (req, res) => {
     const token = jwt.sign(
       { id: newUser._id, email: newUser.email },
       JWT_SECRET,
-      {
-        expiresIn: "7d",
-      }
+      { expiresIn: "7d" }
     );
 
     return res.status(201).json({
@@ -88,7 +86,7 @@ app.post("/login", async (req, res) => {
       return res.status(400).json({ success: false, message: "Bad Request" });
     }
 
-    const findUser = await schema.findOne({ email });
+    const findUser = await User.findOne({ email });
     if (!findUser) {
       return res
         .status(404)
@@ -103,9 +101,7 @@ app.post("/login", async (req, res) => {
     const token = jwt.sign(
       { id: findUser._id, email: findUser.email },
       JWT_SECRET,
-      {
-        expiresIn: "7d",
-      }
+      { expiresIn: "7d" }
     );
 
     return res
@@ -121,7 +117,7 @@ app.post("/login", async (req, res) => {
 app.patch("/update/:id", async (req, res) => {
   try {
     const _id = req.params.id;
-    const data = await schema.findByIdAndUpdate(_id, req.body, { new: true });
+    const data = await User.findByIdAndUpdate(_id, req.body, { new: true });
     return res.status(200).json({ success: true, data });
   } catch (error) {
     return res.status(500).json({ success: false, message: "Server Error" });
@@ -131,7 +127,7 @@ app.patch("/update/:id", async (req, res) => {
 // ✅ جلب كل البيانات
 app.get("/all", async (req, res) => {
   try {
-    const data = await schema.find();
+    const data = await User.find();
     return res.status(200).json({ success: true, data });
   } catch (err) {
     console.error(err);
@@ -196,11 +192,11 @@ app.post("/call", async (req, res) => {
   }
 });
 
-// ✅ جلب بيانات حسب ID (آخر Route عشان ما يعملش مشاكل مع باقي المسارات)
+// ✅ جلب بيانات حسب ID
 app.get("/:id", async (req, res) => {
   try {
     const _id = req.params.id;
-    const data = await schema.findById(_id);
+    const data = await User.findById(_id);
 
     if (!data) {
       return res.status(404).json({ success: false, message: "Not Found" });
