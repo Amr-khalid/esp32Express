@@ -7,7 +7,7 @@ const jwt = require("jsonwebtoken");
 const nodemailer = require("nodemailer");
 const dotenv = require("dotenv");
 const twilio = require("twilio");
-
+const Esp=require("./espSchema")
 dotenv.config();
 
 const app = express();
@@ -25,9 +25,9 @@ app.use(express.json());
 app.use(cors());
 
 // ✅ Route رئيسي للتأكد من عمل السيرفر
-app.get("/", (_, res) => {
-  res.send("✅ Server is running successfully!");
-});
+// app.get("/", (_, res) => {
+//   res.send("✅ Server is running successfully!");
+// });
 
 // ✅ تسجيل مستخدم جديد
 app.post("/register", async (req, res) => {
@@ -208,7 +208,47 @@ app.get("/:id", async (req, res) => {
     return res.status(400).json({ success: false, message: "Invalid ID" });
   }
 });
+const axios = require("axios");
+app.get("/", async (req, res) => {
+  try {
+    const url=req.query.url
+    console.log(url);
+    
+    const response = await axios.get(
+      `${url}/status`
+      
+    );
+    res.json(response.data); // ✅ إرجاع البيانات فقط
+  } catch (err) {
+    console.error("❌ ESP Error:", err.message);
+    res.status(500).json({ error: "فشل الاتصال بـ ESP32" });
+  }
+});
 
+app.post("/off", async (req, res) => {
+  try {
+    const url = req.query.url;
+    console.log(url);
+
+    const response = await axios.post(`${url}/led/off`);
+    res.json(response.data); // ✅ إرجاع البيانات فقط
+  } catch (err) {
+    console.error("❌ ESP Error:", err.message);
+    res.status(500).json({ error: "فشل الاتصال بـ ESP32" });
+  }
+});
+app.post("/on", async (req, res) => {
+  try {
+    const url = req.query.url;
+    console.log(url);
+
+    const response = await axios.post(`${url}/led/on`);
+    res.json(response.data); // ✅ إرجاع البيانات فقط
+  } catch (err) {
+    console.error("❌ ESP Error:", err.message);
+    res.status(500).json({ error: "فشل الاتصال بـ ESP32" });
+  }
+});
 // ✅ تشغيل السيرفر
 app.listen(PORT, () =>
   console.log(`🚀 Server started at http://localhost:${PORT}`)

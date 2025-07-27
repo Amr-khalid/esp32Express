@@ -6,15 +6,14 @@
   "author": "Amr Khaled",
   "type": "commonjs",
   "main": "index.js",
- 
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js"
   },
   "keywords": [],
-
   "dependencies": {
     "@neondatabase/serverless": "^1.0.1",
+    "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^17.2.0",
@@ -28,5 +27,3 @@
     "nodemon": "^3.1.10"
   }
 }
-
-
