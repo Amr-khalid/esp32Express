@@ -104,9 +104,18 @@ app.post("/login", async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    return res
-      .status(200)
-      .json({ success: true, token, id: findUser._id, email: findUser.email });
+    return res.status(200).json({
+      success: true,
+      token,
+      user: {
+        id: findUser._id,
+        username: findUser.username,
+        email: findUser.email,
+        address: findUser.address,
+        phone: findUser.phone,
+        temp: findUser.temp,
+      },
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ success: false, message: "Server Error" });
@@ -249,6 +258,120 @@ app.post("/on", async (req, res) => {
     res.status(500).json({ error: "فشل الاتصال بـ ESP32" });
   }
 });
+
+
+app.post("/forgotPassword", async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email || !emailRegex.test(email)) {
+      return res.status(400).json({
+        success: false,
+        message: "البريد الإلكتروني غير صالح",
+      });
+    }
+
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "المستخدم غير موجود",
+      });
+    }
+
+    // رمز مكون من 6 أرقام
+    const resetCode = Math.floor(100000 + Math.random() * 900000);
+
+    user.resetCode = resetCode;
+    user.resetCodeExpires = Date.now() + 10 * 60 * 1000; // 10 دقائق
+    await user.save();
+
+    const mailOptions = {
+      from: `"SensoSafe" <${process.env.EMAIL_USER}>`,
+      to: email,
+      subject: "رمز تعيين كلمة المرور",
+      html: `
+        <div style="font-family: Arial, sans-serif; text-align: center;">
+          <h2>رمز تعيين كلمة المرور</h2>
+          <p>يرجى استخدام الرمز التالي لتعيين كلمة المرور الخاصة بك:</p>
+          <h1 style="letter-spacing: 5px;">${resetCode}</h1>
+          <p>صالح لمدة 10 دقائق.</p>
+        </div>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    return res.status(200).json({
+      success: true,
+      message: "تم إرسال رمز تعيين كلمة المرور إلى بريدك الإلكتروني",
+    });
+  } catch (error) {
+    console.error("❌ Error in forgotPassword:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "حدث خطأ في الخادم",
+    });
+  }
+});
+
+
+
+
+
+
+app.patch("/resetPassword", async (req, res) => {
+  try {
+    const { email, resetCode, newPassword } = req.body;
+
+    if (!email || !resetCode || !newPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "البيانات غير مكتملة",
+      });
+    }
+
+    const user = await User.findOne({ email });
+
+    if (
+      !user ||
+      user.resetCode !== Number(resetCode) ||
+      !user.resetCodeExpires ||
+      user.resetCodeExpires < Date.now()
+    ) {
+      console.log(user);
+      
+      return res.status(400).json({
+        success: false,
+        message: "رمز غير صالح أو منتهي الصلاحية",
+      });
+    }
+
+    // تشفير كلمة المرور
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // تحديث كلمة المرور ومسح الرمز
+    user.password = hashedPassword;
+    user.resetCode = undefined;
+    user.resetCodeExpires = undefined;
+
+    await user.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "تم تغيير كلمة المرور بنجاح",
+    });
+  } catch (error) {
+    console.error("❌ Error in resetPassword:", error.message);
+    return res.status(500).json({
+      success: false,
+      message: "حدث خطأ في الخادم",
+    });
+  }
+});
+
+
 // ✅ تشغيل السيرفر
 app.listen(PORT, () =>
   console.log(`🚀 Server started at http://localhost:${PORT}`)
