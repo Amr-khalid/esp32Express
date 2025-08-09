@@ -155,16 +155,19 @@ let transporter = nodemailer.createTransport({
 
 app.post("/email", async (req, res) => {
   try {
-    const { phone, address } = req.body;
+    const { phone, address ,email} = req.body;
 
     const mailOptions = {
       from: `"SensoSafe" <${process.env.EMAIL_USER}>`,
-      to: "ak7055864@gmail.com",
+      to: ["ak7055864@gmail.com", email],
       subject: "بلاغ عاجل: تسرب غاز",
       html: `
-        <h2 style="color:red;">🚨 بلاغ عاجل: تسرب غاز</h2>
-        <p><b>العنوان:</b> ${address}</p>
+        <h2 style="color:red;"> بلاغ عاجل: تسرب غاز</h2>
+        <a href="${address}"><b>العنوان:</b> ${address}</ش>
         <p><b>رقم الهاتف للتواصل:</b> ${phone}</p>
+        <P><b>البريد الإلكتروني:</b> ${email}</P>
+        <P><b>التاريخ والوقت:</b> ${new Date().toLocaleString()}</P>
+
       `,
     };
 
